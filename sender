@@ -1,0 +1,33 @@
+#include <SPI.h>
+#include <RF24.h>
+
+#define CE_PIN 7
+#define CSN_PIN 8
+
+RF24 radio(CE_PIN, CSN_PIN);
+const byte address[6] = "VOICE";
+
+void setup() {
+  radio.begin();
+  radio.setChannel(108);
+  radio.setPALevel(RF24_PA_HIGH);
+  radio.setDataRate(RF24_1MBPS);
+  radio.openWritingPipe(address);
+  radio.stopListening();  // وضع الإرسال
+
+  Serial.begin(9600);
+  Serial.println("Transmitter ready...");
+}
+
+void loop() {
+  const char text[] = "Hello from TX!";  // النص اللي بدك ترسله
+  bool success = radio.write(&text, sizeof(text));
+  
+  if (success) {
+    Serial.println("Message sent!");
+  } else {
+    Serial.println("Send failed.");
+  }
+
+  delay(1000);  // يرسل كل ثانية
+}

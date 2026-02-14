@@ -1,0 +1,52 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+#define CE_PIN 2
+#define CSN_PIN 3
+
+RF24 radio(CE_PIN, CSN_PIN);
+const byte address[6] = "VOICE";   // نفس العنوان مع TX
+
+const int RX_MAX = 160;
+char rx[RX_MAX + 1];
+int rxLen = 0;
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("NRF RX init...");
+
+  if (!radio.begin()) {
+    Serial.println("Radio begin failed!");
+    while (1);
+  }
+
+  radio.setPALevel(RF24_PA_LOW);
+  radio.setDataRate(RF24_1MBPS);  // نفس سرعة الإرسال
+  radio.setChannel(108);           // نفس القناة مع TX
+  radio.openReadingPipe(1, address);
+  radio.startListening();
+
+  rxLen = 0;
+  rx[0] = '\0';
+
+  Serial.println("Waiting for messages...");
+}
+
+void loop() {
+  if (radio.available()) {
+    char buf[32] = {0};           // NRF24 حزم 32 بايت كحد أقصى
+    radio.read(&buf, sizeof(buf));
+
+    // أضف النص المستلم إلى البفر
+    for (int i = 0; i < sizeof(buf) && rxLen < RX_MAX; i++) {
+      if (buf[i] == '\0') break;
+      rx[rxLen++] = buf[i];
+    }
+    rx[rxLen] = '\0';
+
+    // اطبع النص المستلم على Serial Monitor
+    Serial.print("Received: ");
+    Serial.println(rx);
+  }
+}
